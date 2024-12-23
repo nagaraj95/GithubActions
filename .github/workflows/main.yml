@@ -43,6 +43,7 @@ jobs:
 
       # Build the APK
       - name: Build APK
+        working-directory: android
         run: ./gradlew assembleRelease
 
       # Sign the APK
