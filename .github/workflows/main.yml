@@ -54,7 +54,7 @@ jobs:
           path: android/app/build/outputs/apk/release/prod/app-release.apk
             
   #QA Deployment             
-  deploy_qa:
+  # deploy_qa:
      runs-on: ubuntu-latest
      steps:
       - name: QA Checkout code
@@ -108,9 +108,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: prod-signed-apk
-      - name: Get qa build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: qa-signed-apk
+
+      # - name: Get qa build artifacts
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: qa-signed-apk
       - name: Deploy code
         run: echo "...Deployed"
