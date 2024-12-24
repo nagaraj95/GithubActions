@@ -51,10 +51,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: prod-signed-apk
-          path: android/app/build/outputs/apk/release/prod/app-release.apk
+          path: android/app/build/outputs/apk/release/prod-release.apk
             
   #QA Deployment             
-  # deploy_qa:
+  deploy_qa:
      runs-on: ubuntu-latest
      steps:
       - name: QA Checkout code
@@ -99,9 +99,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: qa-signed-apk
-          path: android/app/build/outputs/apk/release/qa/app-release.apk
+          path: android/app/build/outputs/apk/release/qa-release.apk
+
   deploy:
-    needs: deploy_prod
+    needs: [deploy_prod,deploy-qa]
     runs-on: ubuntu-latest
     steps:
       - name: Get prod build artifacts
@@ -109,9 +110,9 @@ jobs:
         with:
           name: prod-signed-apk
 
-      # - name: Get qa build artifacts
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: qa-signed-apk
+      - name: Get qa build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: qa-signed-apk
       - name: Deploy code
         run: echo "...Deployed"
