@@ -101,7 +101,7 @@ jobs:
           name: qa-signed-apk
           path: android/app/build/outputs/apk/release/qa/app-release.apk
   deploy:
-    needs: [deploy_prod,deploy_qa]
+    needs: deploy_prod
     runs-on: ubuntu-latest
     steps:
       - name: Get prod build artifacts
