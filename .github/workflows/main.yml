@@ -6,81 +6,111 @@ on:
       - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
+  deploy_prod:
+     runs-on: ubuntu-latest
+     steps:
+      - name: PROD Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: PROD Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Install dependencies
+      - name: PROD Install dependencies
         run: yarn install
   
-      - name: Setup Java
+      - name: PROD Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: 17
 
-      # - name: Setup Gradle
-      #   uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
-
-      - name: Build with Gradle
+      - name: PROD Build with Gradle
         working-directory: android
         run: ./gradlew build
 
-      - name: Decode keystore
+      - name: PROD Decode keystore
         env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          PROD_KEYSTORE_BASE64: ${{ secrets.PROD_KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > my-upload-key.jks
+          echo "$PROD_KEYSTORE_BASE64" | base64 -d > my-upload-key.jks
 
-      - name: Setup Gradle
+      - name: PROD Setup Gradle
         uses: gradle/gradle-build-action@v2
 
-      - name: Build APK
+      - name: PROD Build APK
         working-directory: android
         run: ./gradlew assembleRelease
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          PROD_KEYSTORE_PASSWORD: ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+          PROD_KEY_ALIAS: ${{ secrets.PROD_KEY_ALIAS }}
+          PROD_KEY_PASSWORD: ${{ secrets.PROD_KEY_PASSWORD }}
 
-      - name: Upload APK
+      - name: PROD Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: signed-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
-
-  deploy_prod:
-     runs-on: ubuntu-latest
-     steps:
-        - name: prod PASSWORD
-          env:
-            PROD_KEYSTORE_PASSWORD: ${{ secrets.PROD_KEYSTORE_PASSWORD }}
-          run: |
-             echo "$PROD_KEYSTORE_PASSWORD"
-
+          name: prod-signed-apk
+          path: android/app/build/outputs/apk/release/prod/app-release.apk
+            
+  #QA Deployment             
   deploy_qa:
      runs-on: ubuntu-latest
      steps:
-        - name: qa PASSWORD
-          env:
-            QA_KEYSTORE_PASSWORD: ${{ secrets.QA_KEYSTORE_PASSWORD }}
-          run: |
-             echo "$QA_KEYSTORE_PASSWORD"
+      - name: QA Checkout code
+        uses: actions/checkout@v4
+
+      - name: QA Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: QA Install dependencies
+        run: yarn install
+  
+      - name: QA Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: QA Build with Gradle
+        working-directory: android
+        run: ./gradlew build
+
+      - name: QA Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.QA_KEYSTORE_BASE64 }}
+        run: |
+          echo "$QA_KEYSTORE_BASE64" | base64 -d > my-upload-key.jks
+
+      - name: QA Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: QA Build APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.QA_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.QA_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.QA_KEY_PASSWORD }}
+
+      - name: QA Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-signed-apk
+          path: android/app/build/outputs/apk/release/qa/app-release.apk
   deploy:
-    needs: build
+    needs: [deploy_prod,deploy_qa]
     runs-on: ubuntu-latest
     steps:
-      - name: Get build artifacts
+      - name: Get prod build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: signed-apk
+          name: prod-signed-apk
+      - name: Get qa build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: qa-signed-apk
       - name: Deploy code
         run: echo "...Deployed"
