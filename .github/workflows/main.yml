@@ -102,7 +102,7 @@ jobs:
           path: android/app/build/outputs/apk/release/qa-release.apk
 
   deploy:
-    needs: [deploy_prod, deploy-qa]
+    needs: [deploy_prod, deploy_qa]
     runs-on: ubuntu-latest
     steps:
       - name: Get prod build artifacts
