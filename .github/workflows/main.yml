@@ -57,6 +57,23 @@ jobs:
           name: signed-apk
           path: android/app/build/outputs/apk/release/app-release.apk
 
+  deploy_prod:
+     runs-on: ubuntu-latest
+     steps:
+        - name: prod PASSWORD
+          env:
+            PROD_KEYSTORE_PASSWORD: ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+          run: |
+             echo "$PROD_KEYSTORE_PASSWORD"
+
+  deploy_qa:
+     runs-on: ubuntu-latest
+     steps:
+        - name: qa PASSWORD
+          env:
+            QA_KEYSTORE_PASSWORD: ${{ secrets.QA_KEYSTORE_PASSWORD }}
+          run: |
+             echo "$QA_KEYSTORE_PASSWORD"
   deploy:
     needs: build
     runs-on: ubuntu-latest
