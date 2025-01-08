@@ -1,0 +1,61 @@
+name: Android Build
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - development
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      BUILD_TYPE: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Decrypt Keystore
+        run: |
+          if [ "${{ env.BUILD_TYPE }}" == "main" ]; then
+            echo "${{ secrets.PROD_KEYSTORE_BASE64 }}" | base64 --decode > my-upload-key.jks
+            export KEYSTORE_PASSWORD=${{ secrets.PROD_KEYSTORE_PASSWORD }}
+            export KEY_ALIAS=${{ secrets.PROD_KEY_ALIAS }}
+            export KEY_PASSWORD=${{ secrets.PROD_KEY_PASSWORD }}
+          elif [ "${{ env.BUILD_TYPE }}" == "staging" ]; then
+            echo "${{ secrets.STAGING_KEYSTORE }}" | base64 --decode > keystore.jks
+            export KEYSTORE_PASSWORD=${{ secrets.STAGING_KEYSTORE_PASSWORD }}
+          else
+            echo "${{ secrets.DEVELOPMENT_KEYSTORE }}" | base64 --decode > keystore.jks
+            export KEYSTORE_PASSWORD=${{ secrets.DEVELOPMENT_KEYSTORE_PASSWORD }}
+          fi
+
+      - name: Build APK
+        run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=keystore.jks -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.BUILD_TYPE }}-release.apk
+          path: app/build/outputs/apk/release/app-release.apk
+  
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get prod build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.BUILD_TYPE }}-release.apk
+
+      - name: Deploy code
+        run: echo "...Deployed"
