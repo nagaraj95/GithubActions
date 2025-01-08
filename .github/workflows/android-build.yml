@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - staging
+      - qa
       - development
 
 jobs:
@@ -59,8 +59,8 @@ jobs:
         env:
           KEYSTORE_BASE64:  if [ "${{ env.BUILD_TYPE }}" == "main" ]; then
                             ${{ secrets.PROD_KEYSTORE_BASE64 }}
-                             elif [ "${{ env.BUILD_TYPE }}" == "staging" ]; then
-                            ${{ secrets.PROD_KEYSTORE_BASE64 }}
+                             elif [ "${{ env.BUILD_TYPE }}" == "qa" ]; then
+                            ${{ secrets.QA_KEYSTORE_BASE64 }}
                             else
                               ${{ secrets.PROD_KEYSTORE_BASE64 }}
                             fi
@@ -75,22 +75,22 @@ jobs:
         env:
           KEYSTORE_PASSWORD: if [ "${{ env.BUILD_TYPE }}" == "main" ]; then
                             ${{ secrets.PROD_KEYSTORE_PASSWORD }}
-                             elif [ "${{ env.BUILD_TYPE }}" == "staging" ]; then
-                            ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+                             elif [ "${{ env.BUILD_TYPE }}" == "qa" ]; then
+                            ${{ secrets.QA_KEYSTORE_PASSWORD }}
                             else
                               ${{ secrets.PROD_KEYSTORE_PASSWORD }}
                             fi
           KEY_ALIAS: if [ "${{ env.BUILD_TYPE }}" == "main" ]; then
                             ${{ secrets.PROD_KEY_ALIAS }}
-                             elif [ "${{ env.BUILD_TYPE }}" == "staging" ]; then
-                            ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+                             elif [ "${{ env.BUILD_TYPE }}" == "qa" ]; then
+                            ${{ secrets.QA_KEY_ALIAS }}
                             else
                               ${{ secrets.PROD_KEYSTORE_PASSWORD }}
                             fi
           KEY_PASSWORD: if [ "${{ env.BUILD_TYPE }}" == "main" ]; then
                             ${{ secrets.PROD_KEY_PASSWORD }}
-                             elif [ "${{ env.BUILD_TYPE }}" == "staging" ]; then
-                            ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+                             elif [ "${{ env.BUILD_TYPE }}" == "qa" ]; then
+                            ${{ secrets.QA_KEYSTORE_PASSWORD }}
                             else
                               ${{ secrets.PROD_KEYSTORE_PASSWORD }}
                             fi
