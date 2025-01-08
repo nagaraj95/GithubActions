@@ -31,7 +31,7 @@ jobs:
         run: yarn install
   
       - name: ${{ github.ref_name }} Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v
         with:
           distribution: 'temurin'
           java-version: 17
@@ -65,8 +65,11 @@ jobs:
                               ${{ secrets.PROD_KEYSTORE_BASE64 }}
                             fi
         run: base64 -d > my-upload-key.jks
+      
+      - name: ${{ github.ref_name }} Setup Gradle
+        uses: gradle/gradle-build-action@v2
 
-      - name: Build APK
+      - name: Build ${{ github.ref_name }} APK
         working-directory: android
         run: ./gradlew assembleRelease
         env:
@@ -93,14 +96,16 @@ jobs:
                             fi
 
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.BUILD_TYPE }}-release.apk
-          path: app/build/outputs/apk/release/app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
   
   deploy:
     needs: [build]
     runs-on: ubuntu-latest
+    env:
+      BUILD_TYPE: ${{ github.ref_name }}
     steps:
       - name: Get prod build artifacts
         uses: actions/download-artifact@v4
