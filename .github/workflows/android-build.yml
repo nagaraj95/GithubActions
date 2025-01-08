@@ -64,8 +64,7 @@ jobs:
                             else
                               ${{ secrets.PROD_KEYSTORE_BASE64 }}
                             fi
-        # run: |
-        #   echo "$KEYSTORE_BASE64" | base64 -d > my-upload-key.jks
+        run: base64 -d > my-upload-key.jks
 
       - name: Build APK
         working-directory: android
