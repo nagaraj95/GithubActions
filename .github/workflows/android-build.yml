@@ -11,6 +11,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        environment: [main, staging, production]
+
     env:
       BUILD_TYPE: ${{ github.ref_name }}
 
@@ -36,24 +40,58 @@ jobs:
         working-directory: android
         run: ./gradlew build
 
-      - name: Decrypt Keystore
+      # - name:  ${{ github.ref_name }} Decrypt Keystore
+      #   run: |
+      #     if [ "${{ env.BUILD_TYPE }}" == "main" ]; then
+      #       echo "${{ secrets.PROD_KEYSTORE_BASE64 }}" | base64 --decode > my-upload-key.jks
+      #       export KEYSTORE_PASSWORD=${{ secrets.PROD_KEYSTORE_PASSWORD }}
+      #       export KEY_ALIAS=${{ secrets.PROD_KEY_ALIAS }}
+      #       export KEY_PASSWORD=${{ secrets.PROD_KEY_PASSWORD }}
+      #     elif [ "${{ env.BUILD_TYPE }}" == "staging" ]; then
+      #       echo "${{ secrets.STAGING_KEYSTORE }}" | base64 --decode > keystore.jks
+      #       export KEYSTORE_PASSWORD=${{ secrets.STAGING_KEYSTORE_PASSWORD }}
+      #     else
+      #       echo "${{ secrets.DEVELOPMENT_KEYSTORE }}" | base64 --decode > keystore.jks
+      #       export KEYSTORE_PASSWORD=${{ secrets.DEVELOPMENT_KEYSTORE_PASSWORD }}
+      #     fi
+
+      - name: ${{ github.ref_name }} Decode keystore
+        env:
+          KEYSTORE_BASE64:  if [ "${{ env.BUILD_TYPE }}" == "main" ]; then
+                            ${{ secrets.PROD_KEYSTORE_BASE64 }}
+                             elif [ "${{ env.BUILD_TYPE }}" == "staging" ]; then
+                            ${{ secrets.PROD_KEYSTORE_BASE64 }}
+                            else
+                              ${{ secrets.PROD_KEYSTORE_BASE64 }}
+                            fi
         run: |
-          if [ "${{ env.BUILD_TYPE }}" == "main" ]; then
-            echo "${{ secrets.PROD_KEYSTORE_BASE64 }}" | base64 --decode > my-upload-key.jks
-            export KEYSTORE_PASSWORD=${{ secrets.PROD_KEYSTORE_PASSWORD }}
-            export KEY_ALIAS=${{ secrets.PROD_KEY_ALIAS }}
-            export KEY_PASSWORD=${{ secrets.PROD_KEY_PASSWORD }}
-          elif [ "${{ env.BUILD_TYPE }}" == "staging" ]; then
-            echo "${{ secrets.STAGING_KEYSTORE }}" | base64 --decode > keystore.jks
-            export KEYSTORE_PASSWORD=${{ secrets.STAGING_KEYSTORE_PASSWORD }}
-          else
-            echo "${{ secrets.DEVELOPMENT_KEYSTORE }}" | base64 --decode > keystore.jks
-            export KEYSTORE_PASSWORD=${{ secrets.DEVELOPMENT_KEYSTORE_PASSWORD }}
-          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > my-upload-key.jks
 
       - name: Build APK
         working-directory: android
-        run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=my-upload-key.jks -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD
+        run: ./gradlew assembleRelease
+        env:
+          KEYSTORE_PASSWORD: if [ "${{ env.BUILD_TYPE }}" == "main" ]; then
+                            ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+                             elif [ "${{ env.BUILD_TYPE }}" == "staging" ]; then
+                            ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+                            else
+                              ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+                            fi
+          KEY_ALIAS: if [ "${{ env.BUILD_TYPE }}" == "main" ]; then
+                            ${{ secrets.PROD_KEY_ALIAS }}
+                             elif [ "${{ env.BUILD_TYPE }}" == "staging" ]; then
+                            ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+                            else
+                              ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+                            fi
+          KEY_PASSWORD: if [ "${{ env.BUILD_TYPE }}" == "main" ]; then
+                            ${{ secrets.PROD_KEY_PASSWORD }}
+                             elif [ "${{ env.BUILD_TYPE }}" == "staging" ]; then
+                            ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+                            else
+                              ${{ secrets.PROD_KEYSTORE_PASSWORD }}
+                            fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v3
