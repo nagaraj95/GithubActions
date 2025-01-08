@@ -15,14 +15,26 @@ jobs:
       BUILD_TYPE: ${{ github.ref_name }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: ${{ github.ref_name }} Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup JDK
+      - name: ${{ github.ref_name }} Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: ${{ github.ref_name }} Install dependencies
+        run: yarn install
+  
+      - name: ${{ github.ref_name }} Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '11'
+          java-version: 17
+
+      - name: ${{ github.ref_name }} Build with Gradle
+        working-directory: android
+        run: ./gradlew build
 
       - name: Decrypt Keystore
         run: |
@@ -40,6 +52,7 @@ jobs:
           fi
 
       - name: Build APK
+        working-directory: android
         run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=keystore.jks -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD
 
       - name: Upload APK
